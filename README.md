@@ -19,7 +19,7 @@ Open [index.html](./index.html) in a modern browser.
 On Windows PowerShell:
 
 ```powershell
-cd "C:\Users\bhebb\OneDrive\Documents\New folder"
+cd "C:\Users\bhebb\OneDrive\Documents\emag-ekans"
 start .\index.html
 ```
 
@@ -39,13 +39,13 @@ start .\index.html
 
 Repository:
 
-[https://github.com/bhebb3/Beginning](https://github.com/bhebb3/Beginning)
+[https://github.com/bhebb3/emag-ekans](https://github.com/bhebb3/emag-ekans)
 
 ## GitHub Pages
 
 Once GitHub Pages is enabled, the live version will be available at:
 
-[https://bhebb3.github.io/Beginning/](https://bhebb3.github.io/Beginning/)
+[https://bhebb3.github.io/emag-ekans/](https://bhebb3.github.io/emag-ekans/)
 
 ## Update The Repo
 
@@ -56,3 +56,4 @@ git add .
 git commit -m "Describe your changes"
 git push
 ```
+
