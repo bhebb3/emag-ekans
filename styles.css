@@ -234,6 +234,17 @@ select {
   font-size: 0.88rem;
 }
 
+.snake-fact {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--text-main);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
 .game-panel {
   padding: 14px;
   animation: panel-rise 480ms ease;
@@ -251,7 +262,7 @@ select {
 
 .hud-block {
   flex: 1;
-  min-width: 110px;
+  min-width: 140px;
   padding: 10px 12px;
   border-radius: 16px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.14));
@@ -417,3 +428,4 @@ select {
     flex-direction: column;
   }
 }
+

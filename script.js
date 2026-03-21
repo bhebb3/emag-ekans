@@ -11,10 +11,9 @@ const fruitSelect = document.getElementById("fruitSelect");
 const wallsToggle = document.getElementById("wallsToggle");
 const scoreValue = document.getElementById("scoreValue");
 const bestValue = document.getElementById("bestValue");
-const statusValue = document.getElementById("statusValue");
+const snakeFact = document.getElementById("snakeFact");
 const scoreBar = document.getElementById("scoreBar");
 const bestBar = document.getElementById("bestBar");
-const stateBar = document.getElementById("stateBar");
 const overlay = document.getElementById("overlay");
 const overlayTitle = document.getElementById("overlayTitle");
 const overlayMessage = document.getElementById("overlayMessage");
@@ -24,6 +23,15 @@ const ctx = canvas.getContext("2d");
 const bestScoreKey = "emag-ekans-best-score";
 let bestScore = Number(localStorage.getItem(bestScoreKey) || 0);
 bestValue.textContent = bestScore;
+
+const snakeFacts = [
+  "Some snakes can go months between meals because their metabolism is extremely efficient.",
+  "Snakes smell with their tongues by carrying scent particles to an organ on the roof of the mouth.",
+  "Not all snakes lay eggs. Many species give birth to live young.",
+  "A snake's scales are made of keratin, the same material found in human fingernails.",
+  "Pythons and boas can detect heat from warm-blooded animals with specialized facial pits.",
+  "Sea snakes can hold their breath for a long time while hunting underwater."
+];
 
 const state = {
   tileCount: Number(gridSelect.value),
@@ -292,7 +300,7 @@ function updateAudioButton() {
   audioButton.setAttribute("aria-pressed", String(audioState.enabled));
 }
 
-function resetGameState() {
+function resetGameState(startDirection = { x: 1, y: 0 }) {
   state.tileCount = Number(gridSelect.value);
   state.moveDelay = Number(speedSelect.value);
   state.solidWalls = wallsToggle.checked;
@@ -304,14 +312,15 @@ function resetGameState() {
   state.lastTick = 0;
 
   const center = Math.floor(state.tileCount / 2);
+  const safeDirection = startDirection.x === 0 && startDirection.y === 0 ? { x: 1, y: 0 } : startDirection;
   state.snake = [
     { x: center, y: center },
-    { x: center - 1, y: center },
-    { x: center - 2, y: center }
+    { x: center - safeDirection.x, y: center - safeDirection.y },
+    { x: center - safeDirection.x * 2, y: center - safeDirection.y * 2 }
   ];
   state.previousSnake = state.snake.map((segment) => ({ ...segment }));
-  state.direction = { x: 1, y: 0 };
-  state.pendingDirection = { x: 1, y: 0 };
+  state.direction = { ...safeDirection };
+  state.pendingDirection = { ...safeDirection };
   state.inputQueue = [];
   state.obstacles = buildMap(state.mapName, state.tileCount);
   state.particles = [];
@@ -320,7 +329,11 @@ function resetGameState() {
   hideOverlay();
 }
 
-function startGame(startDirection = null) {
+function startGame(startDirection = { x: 1, y: 0 }) {
+  const normalizedDirection =
+    startDirection && Number.isFinite(startDirection.x) && Number.isFinite(startDirection.y)
+      ? startDirection
+      : { x: 1, y: 0 };
   ensureAudio();
   audioState.beatStep = 0;
   audioState.phrase = Math.floor(Math.random() * 8);
@@ -328,11 +341,7 @@ function startGame(startDirection = null) {
   startBeatLoop();
   playUiBlip(540, 0.08, "sawtooth", 0.09);
   cancelAnimationFrame(state.animationId);
-  resetGameState();
-  if (startDirection) {
-    state.direction = startDirection;
-    state.pendingDirection = startDirection;
-  }
+  resetGameState(normalizedDirection);
   titlePanel.classList.add("hidden");
   gamePanel.classList.remove("hidden");
   state.lastTick = performance.now();
@@ -342,11 +351,8 @@ function startGame(startDirection = null) {
 function updateHud() {
   scoreValue.textContent = state.score;
   bestValue.textContent = bestScore;
-  statusValue.textContent = state.paused ? "Paused" : state.running ? "Running" : "Stopped";
   scoreBar.style.width = `${Math.min(100, (state.score % 100) || (state.score > 0 ? 100 : 10))}%`;
   bestBar.style.width = `${Math.min(100, Math.max(12, bestScore / 2))}%`;
-  stateBar.style.width = state.paused ? "44%" : state.running ? "100%" : "16%";
-  stateBar.style.opacity = state.paused ? "0.75" : "1";
 }
 
 function placeFood() {
@@ -560,6 +566,9 @@ function getInterpolatedSnake(progress) {
 }
 
 function drawSnake(tileSize, progress) {
+  if (state.snake.length === 0) {
+    return;
+  }
   const root = getComputedStyle(document.documentElement);
   const snakePoints = getInterpolatedSnake(progress);
   const bodyRadius = tileSize * 0.4;
@@ -726,6 +735,9 @@ function drawFruit(tileSize) {
 }
 
 function drawLighting(tileSize) {
+  if (state.snake.length === 0) {
+    return;
+  }
   const head = state.snake[0];
   if (!head) {
     return;
@@ -871,6 +883,15 @@ function toggleAudio() {
   playUiBlip(880, 0.08, "triangle", 0.08);
 }
 
+function setRandomSnakeFact() {
+  if (!snakeFact) {
+    return;
+  }
+
+  const fact = snakeFacts[Math.floor(Math.random() * snakeFacts.length)];
+  snakeFact.textContent = `Snake Fact: ${fact}`;
+}
+
 function tryStartFromDirection(nextX, nextY) {
   const direction = { x: nextX, y: nextY };
   if (!titlePanel.classList.contains("hidden")) {
@@ -921,9 +942,12 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-startButton.addEventListener("click", startGame);
-restartButton.addEventListener("click", startGame);
-menuButton.addEventListener("click", returnToMenu);
+startButton.addEventListener("click", () => startGame());
+restartButton.addEventListener("click", () => startGame());
+menuButton.addEventListener("click", () => {
+  setRandomSnakeFact();
+  returnToMenu();
+});
 audioButton.addEventListener("click", toggleAudio);
 
 [startButton, restartButton, menuButton, audioButton].forEach((button) => {
@@ -939,6 +963,6 @@ audioButton.addEventListener("click", toggleAudio);
 });
 
 updateAudioButton();
+setRandomSnakeFact();
 drawBoard();
-
 
