@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Emag Ekans</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +23,15 @@
 
         <details class="options-menu" open>
           <summary>Options Menu</summary>
+
+          <label class="option-row" for="modeSelect">
+            <span>Mode</span>
+            <select id="modeSelect">
+              <option value="classic" selected>Classic</option>
+              <option value="sprint">Sprint</option>
+              <option value="zen">Zen</option>
+            </select>
+          </label>
 
           <label class="option-row" for="speedSelect">
             <span>Speed</span>
@@ -59,9 +68,57 @@
             </select>
           </label>
 
+          <label class="option-row" for="colorSelect">
+            <span>Snake Colors</span>
+            <select id="colorSelect">
+              <option value="sage" selected>Sage Gold</option>
+              <option value="berry">Berry Mint</option>
+              <option value="mono">Monochrome</option>
+              <option value="sunset">Sunset</option>
+            </select>
+          </label>
+
           <label class="option-row toggle-row" for="wallsToggle">
             <span>Solid Walls</span>
             <input id="wallsToggle" type="checkbox" checked>
+          </label>
+        </details>
+
+        <details class="options-menu audio-menu">
+          <summary>Audio Settings</summary>
+
+          <label class="option-row" for="musicMoodSelect">
+            <span>Music Mood</span>
+            <select id="musicMoodSelect">
+              <option value="breeze" selected>Breeze</option>
+              <option value="pulse">Pulse</option>
+              <option value="drift">Drift</option>
+            </select>
+          </label>
+
+          <label class="option-row" for="masterVolume">
+            <span>Master</span>
+            <input id="masterVolume" type="range" min="0" max="100" value="55">
+          </label>
+
+          <label class="option-row" for="musicVolume">
+            <span>Music</span>
+            <input id="musicVolume" type="range" min="0" max="100" value="38">
+          </label>
+
+          <label class="option-row" for="sfxVolume">
+            <span>SFX</span>
+            <input id="sfxVolume" type="range" min="0" max="100" value="72">
+          </label>
+
+          <label class="option-row toggle-row" for="musicMuteToggle">
+            <span>Mute Music</span>
+            <input id="musicMuteToggle" type="checkbox">
+          </label>
+
+          <label class="option-row toggle-row" for="sfxMuteToggle">
+            <span>Mute SFX</span>
+            <input id="sfxMuteToggle" type="checkbox">
           </label>
         </details>
 
@@ -91,12 +148,13 @@
           <strong id="bestValue">0</strong>
           <div class="hud-meter"><span id="bestBar"></span></div>
         </div>
-
-
-        <button class="hud-toggle" id="audioButton" type="button" aria-pressed="true">Audio On</button>
+        <div class="hud-actions">
+          <button class="hud-toggle" id="audioButton" type="button" aria-pressed="true">Audio On</button>
+          <button class="hud-toggle" id="fullscreenButton" type="button">Fullscreen</button>
+        </div>
       </header>
 
-      <div class="board-wrap">
+      <div class="board-wrap" id="boardWrap">
         <div class="noise-overlay" aria-hidden="true"></div>
         <canvas id="gameCanvas" width="600" height="600" aria-label="Snake game board"></canvas>
         <div class="overlay hidden" id="overlay">
@@ -122,8 +180,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
-
-
-
-
