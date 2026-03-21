@@ -68,6 +68,14 @@
         <p class="controls-note">Arrow keys or WASD move the snake, start a run, and restart your rhythm. Space pauses.</p>
         <p class="snake-fact" id="snakeFact"></p>
         <button class="fact-button" id="factButton" type="button">Another Fact</button>
+
+        <section class="history-panel">
+          <div class="history-header">
+            <h2 class="history-title">Recent Runs</h2>
+            <button class="history-clear" id="clearHistoryButton" type="button">Clear</button>
+          </div>
+          <ol class="history-list" id="historyList"></ol>
+        </section>
       </div>
     </section>
 
@@ -100,12 +108,22 @@
           </div>
         </div>
       </div>
+
+      <div class="touch-controls" aria-label="Touch controls">
+        <button class="touch-button touch-up" id="touchUp" type="button" aria-label="Move up">Up</button>
+        <button class="touch-button touch-left" id="touchLeft" type="button" aria-label="Move left">Left</button>
+        <button class="touch-button touch-pause" id="touchPause" type="button" aria-label="Pause game">Pause</button>
+        <button class="touch-button touch-right" id="touchRight" type="button" aria-label="Move right">Right</button>
+        <button class="touch-button touch-down" id="touchDown" type="button" aria-label="Move down">Down</button>
+      </div>
     </section>
   </main>
 
   <script src="script.js"></script>
 </body>
 </html>
+
+
 
 
 

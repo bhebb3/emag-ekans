@@ -13,6 +13,13 @@ const scoreValue = document.getElementById("scoreValue");
 const bestValue = document.getElementById("bestValue");
 const snakeFact = document.getElementById("snakeFact");
 const factButton = document.getElementById("factButton");
+const historyList = document.getElementById("historyList");
+const clearHistoryButton = document.getElementById("clearHistoryButton");
+const touchUp = document.getElementById("touchUp");
+const touchLeft = document.getElementById("touchLeft");
+const touchRight = document.getElementById("touchRight");
+const touchDown = document.getElementById("touchDown");
+const touchPause = document.getElementById("touchPause");
 const scoreBar = document.getElementById("scoreBar");
 const bestBar = document.getElementById("bestBar");
 const overlay = document.getElementById("overlay");
@@ -22,9 +29,11 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
 const bestScoreKey = "emag-ekans-best-score";
+const scoreHistoryKey = "emag-ekans-score-history";
 let bestScore = Number(localStorage.getItem(bestScoreKey) || 0);
 let currentFactIndex = -1;
 let scorePulseTimeout = 0;
+let scoreHistory = loadScoreHistory();
 bestValue.textContent = bestScore;
 
 const snakeFacts = [
@@ -56,6 +65,46 @@ const state = {
   animationId: 0,
   lastTick: 0
 };
+
+function loadScoreHistory() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(scoreHistoryKey) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveScoreHistory() {
+  localStorage.setItem(scoreHistoryKey, JSON.stringify(scoreHistory));
+}
+
+function renderScoreHistory() {
+  if (!historyList) {
+    return;
+  }
+
+  if (scoreHistory.length === 0) {
+    historyList.innerHTML = '<li class="history-empty">No runs yet. Eat a fruit and start a streak.</li>';
+    return;
+  }
+
+  historyList.innerHTML = scoreHistory
+    .map((entry) => `<li><span>${entry.score} pts</span><span>${entry.label}</span></li>`)
+    .join("");
+}
+
+function rememberRun(score) {
+  if (score <= 0) {
+    return;
+  }
+
+  const label = new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  scoreHistory.unshift({ score, label });
+  scoreHistory = scoreHistory.sort((a, b) => b.score - a.score).slice(0, 6);
+  saveScoreHistory();
+  renderScoreHistory();
+}
 
 const audioState = {
   enabled: true,
@@ -509,6 +558,7 @@ function stepGame() {
 
 function endGame(message) {
   state.running = false;
+  rememberRun(state.score);
   cancelAnimationFrame(state.animationId);
   if (state.snake[0]) {
     spawnImpactParticles(state.snake[0].x, state.snake[0].y, "crash");
@@ -918,6 +968,13 @@ function setRandomSnakeFact() {
   snakeFact.textContent = `Snake Fact: ${snakeFacts[currentFactIndex]}`;
 }
 
+function handleTouchDirection(nextX, nextY) {
+  if (tryStartFromDirection(nextX, nextY)) {
+    return;
+  }
+  setDirection(nextX, nextY);
+}
+
 function tryStartFromDirection(nextX, nextY) {
   const direction = { x: nextX, y: nextY };
   if (!titlePanel.classList.contains("hidden")) {
@@ -981,6 +1038,24 @@ if (factButton) {
     setRandomSnakeFact();
   });
 }
+if (clearHistoryButton) {
+  clearHistoryButton.addEventListener("click", () => {
+    scoreHistory = [];
+    saveScoreHistory();
+    renderScoreHistory();
+  });
+}
+
+[[touchUp, 0, -1], [touchLeft, -1, 0], [touchRight, 1, 0], [touchDown, 0, 1]].forEach(([button, x, y]) => {
+  if (button) {
+    button.addEventListener("click", () => handleTouchDirection(x, y));
+  }
+});
+
+if (touchPause) {
+  touchPause.addEventListener("click", () => pauseGame());
+}
+
 
 [startButton, restartButton, menuButton, audioButton].forEach((button) => {
   button.addEventListener("pointerdown", () => {
@@ -995,6 +1070,7 @@ if (factButton) {
 });
 
 updateAudioButton();
+renderScoreHistory();
 setRandomSnakeFact();
 drawBoard();
 
