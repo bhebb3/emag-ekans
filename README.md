@@ -1,19 +1,20 @@
 # Emag Ekans
 
-`Emag Ekans` is a browser-based snake game with a polished menu, animated HUD, reactive audio, particle effects, and a retro-modern visual style.
+Emag Ekans is a browser-based snake game with a stylized menu, animated HUD, reactive audio, particles, and a retro-modern visual direction.
 
-## Features
+## Overview
 
-- Classic snake gameplay with score tracking and best score saving
-- Start screen with options for speed, board size, map type, fruit style, and wall behavior
-- Keyboard-first controls with arrow keys or `WASD`
-- Animated HUD with score, best score, and state indicators
-- Particle effects, lighting, soft glow, and scanline/noise styling
-- Generated in-browser audio with menu sounds, fruit pickup feedback, and background rhythm
+This project is a custom take on the classic snake formula. It keeps the familiar core gameplay, then layers on presentation and polish with:
 
-## How To Run
+- a title screen and options menu
+- adjustable speed, board size, fruit style, and wall rules
+- animated HUD meters and score tracking
+- particle effects, lighting, glow, and screen texture
+- generated in-browser sound for UI and gameplay
 
-Open [index.html](./index.html) in any modern browser.
+## Play Locally
+
+Open [index.html](./index.html) in a modern browser.
 
 On Windows PowerShell:
 
@@ -24,15 +25,15 @@ start .\index.html
 
 ## Controls
 
-- `Arrow Keys` or `WASD`: Start and move the snake
+- `Arrow Keys` or `WASD`: Start the game and move the snake
 - `Space`: Pause or resume
 - `Enter`: Start from the title screen
 
-## Files
+## Project Files
 
-- `index.html`: Page structure and HUD/menu layout
-- `styles.css`: Visual design, layout, and UI styling
-- `script.js`: Game logic, rendering, effects, and audio
+- `index.html` - layout, menu, HUD, and game screen structure
+- `styles.css` - overall styling, visual theme, layout, and UI animation
+- `script.js` - gameplay, rendering, audio generation, particles, and effects
 
 ## GitHub
 
@@ -40,10 +41,18 @@ Repository:
 
 [https://github.com/bhebb3/Beginning](https://github.com/bhebb3/Beginning)
 
-To push the README after creating it:
+## GitHub Pages
+
+Once GitHub Pages is enabled, the live version will be available at:
+
+[https://bhebb3.github.io/Beginning/](https://bhebb3.github.io/Beginning/)
+
+## Update The Repo
+
+When you make changes, use:
 
 ```powershell
-git add README.md
-git commit -m "Add README"
+git add .
+git commit -m "Describe your changes"
 git push
 ```
