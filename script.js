@@ -12,6 +12,7 @@ const wallsToggle = document.getElementById("wallsToggle");
 const scoreValue = document.getElementById("scoreValue");
 const bestValue = document.getElementById("bestValue");
 const snakeFact = document.getElementById("snakeFact");
+const factButton = document.getElementById("factButton");
 const scoreBar = document.getElementById("scoreBar");
 const bestBar = document.getElementById("bestBar");
 const overlay = document.getElementById("overlay");
@@ -22,6 +23,8 @@ const ctx = canvas.getContext("2d");
 
 const bestScoreKey = "emag-ekans-best-score";
 let bestScore = Number(localStorage.getItem(bestScoreKey) || 0);
+let currentFactIndex = -1;
+let scorePulseTimeout = 0;
 bestValue.textContent = bestScore;
 
 const snakeFacts = [
@@ -355,6 +358,21 @@ function updateHud() {
   bestBar.style.width = `${Math.min(100, Math.max(12, bestScore / 2))}%`;
 }
 
+function pulseScoreCard() {
+  const scoreCard = scoreValue.closest(".hud-block");
+  if (!scoreCard) {
+    return;
+  }
+
+  scoreCard.classList.remove("score-pop");
+  void scoreCard.offsetWidth;
+  scoreCard.classList.add("score-pop");
+  clearTimeout(scorePulseTimeout);
+  scorePulseTimeout = window.setTimeout(() => {
+    scoreCard.classList.remove("score-pop");
+  }, 240);
+}
+
 function placeFood() {
   const openTiles = [];
   for (let x = 0; x < state.tileCount; x += 1) {
@@ -477,6 +495,7 @@ function stepGame() {
     }
     placeFood();
     playEatSound();
+    pulseScoreCard();
     spawnImpactParticles(nextHead.x, nextHead.y, "food");
     canvas.classList.remove("flash");
     void canvas.offsetWidth;
@@ -888,8 +907,15 @@ function setRandomSnakeFact() {
     return;
   }
 
-  const fact = snakeFacts[Math.floor(Math.random() * snakeFacts.length)];
-  snakeFact.textContent = `Snake Fact: ${fact}`;
+  let nextIndex = Math.floor(Math.random() * snakeFacts.length);
+  if (snakeFacts.length > 1) {
+    while (nextIndex === currentFactIndex) {
+      nextIndex = Math.floor(Math.random() * snakeFacts.length);
+    }
+  }
+
+  currentFactIndex = nextIndex;
+  snakeFact.textContent = `Snake Fact: ${snakeFacts[currentFactIndex]}`;
 }
 
 function tryStartFromDirection(nextX, nextY) {
@@ -949,6 +975,12 @@ menuButton.addEventListener("click", () => {
   returnToMenu();
 });
 audioButton.addEventListener("click", toggleAudio);
+if (factButton) {
+  factButton.addEventListener("click", () => {
+    playUiBlip(700, 0.05, "triangle", 0.05);
+    setRandomSnakeFact();
+  });
+}
 
 [startButton, restartButton, menuButton, audioButton].forEach((button) => {
   button.addEventListener("pointerdown", () => {
@@ -965,4 +997,6 @@ audioButton.addEventListener("click", toggleAudio);
 updateAudioButton();
 setRandomSnakeFact();
 drawBoard();
+
+
 
