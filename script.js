@@ -12,6 +12,7 @@ const gridSelect = document.getElementById("gridSelect");
 const mapSelect = document.getElementById("mapSelect");
 const fruitSelect = document.getElementById("fruitSelect");
 const colorSelect = document.getElementById("colorSelect");
+const modeDescription = document.getElementById("modeDescription");
 const wallsToggle = document.getElementById("wallsToggle");
 const musicMoodSelect = document.getElementById("musicMoodSelect");
 const masterVolume = document.getElementById("masterVolume");
@@ -79,9 +80,30 @@ const colorThemes = {
 };
 
 const modeConfig = {
-  classic: { label: "Classic", speedScale: 1, points: 10, wrap: false, ghost: false },
-  sprint: { label: "Sprint", speedScale: 0.82, points: 15, wrap: false, ghost: false },
-  zen: { label: "Zen", speedScale: 1.18, points: 8, wrap: true, ghost: true }
+  classic: {
+    label: "Classic",
+    description: "Balanced endless snake with standard rules and clean arcade pacing.",
+    speedScale: 1,
+    points: 10,
+    wrap: false,
+    ghost: false
+  },
+  sprint: {
+    label: "Sprint",
+    description: "Higher score rewards and rising speed after every fruit for riskier runs.",
+    speedScale: 0.82,
+    points: 15,
+    wrap: false,
+    ghost: false
+  },
+  zen: {
+    label: "Zen",
+    description: "Relaxed wraparound play with forgiving movement and no deadly body tangles.",
+    speedScale: 1.18,
+    points: 8,
+    wrap: true,
+    ghost: true
+  }
 };
 
 const defaultAudioPrefs = {
@@ -377,31 +399,77 @@ function playCrashSound() {
   createEnvelope("square", 74, now + 0.04, 0.2, 0.07, audioState.sfxGain);
 }
 
-function getMoodPatterns() {
-  const moods = {
+function playLead(time, note, type = "triangle", duration = 0.16, volume = 0.024) {
+  const frequency = 440 * 2 ** (note / 12);
+  createEnvelope(type, frequency, time, duration, volume, audioState.musicGain);
+}
+
+function getMoodPatterns(scene = "game") {
+  const library = {
     breeze: {
-      kicks: [[0, 8, 18, 24], [0, 10, 16, 26], [0, 8, 20, 28], [0, 12, 18, 24]],
-      snares: [[8, 24], [8, 24], [8, 23, 24], [8, 24]],
-      hats: [[4, 12, 20, 28], [2, 6, 14, 22, 30], [4, 10, 18, 26, 30], [3, 11, 19, 27]],
-      bass: [{ 0: 0, 8: 5, 16: 3, 24: 7 }, { 0: 0, 10: 3, 16: 7, 24: 5 }, { 0: -2, 8: 5, 18: 3, 24: 8 }, { 0: 0, 12: 3, 18: 5, 24: 10 }],
-      pads: [{ 0: 0, 16: 5 }, { 0: 3, 16: 7 }, { 0: -2, 16: 5 }, { 0: 0, 16: 10 }]
+      menu: {
+        kicks: [[], [], [], []],
+        snares: [[], [], [], []],
+        hats: [[6, 14, 22, 30], [2, 10, 18, 26], [4, 12, 20, 28], [8, 16, 24]],
+        bass: [{ 0: 7, 16: 12 }, { 0: 5, 16: 10 }, { 0: 3, 16: 8 }, { 0: 7, 16: 14 }],
+        pads: [{ 0: 7, 16: 12 }, { 0: 5, 16: 10 }, { 0: 3, 16: 8 }, { 0: 7, 16: 14 }],
+        lead: [{ 4: 19, 12: 21, 20: 24, 28: 19 }, { 2: 17, 10: 19, 18: 21, 26: 17 }, { 6: 15, 14: 17, 22: 19, 30: 22 }, { 4: 19, 12: 24, 20: 26, 28: 24 }],
+        profile: { kick: 0, snare: 0, hat: 0.018, bass: 0.016, pad: 0.024, lead: 0.026, leadType: "sine", leadDuration: 0.22 }
+      },
+      game: {
+        kicks: [[0, 16], [0, 18], [0, 16, 24], [0, 20]],
+        snares: [[8, 24], [8, 24], [8, 24], [12, 28]],
+        hats: [[4, 12, 20, 28], [2, 10, 18, 26], [6, 14, 22, 30], [4, 8, 20, 24]],
+        bass: [{ 0: 0, 16: 7 }, { 0: 0, 18: 5 }, { 0: 3, 16: 8 }, { 0: 5, 20: 10 }],
+        pads: [{ 0: 7, 16: 12 }, { 0: 5, 16: 10 }, { 0: 3, 16: 8 }, { 0: 7, 16: 14 }],
+        lead: [{ 2: 19, 10: 21, 18: 24, 26: 19 }, { 4: 17, 12: 19, 20: 21, 28: 17 }, { 6: 15, 14: 17, 22: 19, 30: 22 }, { 2: 19, 10: 24, 18: 26, 26: 24 }],
+        profile: { kick: 0.08, snare: 0.05, hat: 0.02, bass: 0.018, pad: 0.018, lead: 0.022, leadType: "triangle", leadDuration: 0.18 }
+      }
     },
     pulse: {
-      kicks: [[0, 6, 12, 16, 22, 28], [0, 8, 14, 16, 24, 28], [0, 4, 12, 18, 24, 30], [0, 8, 12, 20, 24, 28]],
-      snares: [[8, 24], [8, 20, 24], [8, 24], [8, 24, 30]],
-      hats: [[2, 4, 6, 10, 14, 18, 22, 26, 30], [1, 3, 5, 9, 13, 17, 21, 25, 29], [2, 6, 10, 12, 18, 22, 26, 30], [1, 5, 9, 13, 17, 21, 25, 29]],
-      bass: [{ 0: 0, 6: 3, 12: 5, 20: 7, 24: 10 }, { 0: 0, 8: 7, 14: 5, 20: 3, 24: 8 }, { 0: -2, 4: 0, 12: 5, 18: 7, 24: 3 }, { 0: 0, 8: 3, 12: 7, 20: 10, 24: 12 }],
-      pads: [{ 0: 0, 16: 7 }, { 0: 3, 16: 8 }, { 0: -2, 16: 5 }, { 0: 0, 16: 12 }]
+      menu: {
+        kicks: [[0, 16], [0, 12, 24], [0, 18], [0, 16, 28]],
+        snares: [[8, 24], [12, 28], [10, 26], [8, 24]],
+        hats: [[4, 8, 12, 20, 24, 28], [2, 6, 14, 18, 22, 30], [4, 10, 16, 20, 26, 30], [6, 12, 18, 24, 28]],
+        bass: [{ 0: -7, 16: -2 }, { 0: -5, 12: 0, 24: 5 }, { 0: -7, 18: -2 }, { 0: -3, 16: 2, 28: 5 }],
+        pads: [{ 0: -7, 16: 0 }, { 0: -5, 16: 2 }, { 0: -3, 16: 5 }, { 0: -2, 16: 7 }],
+        lead: [{ 2: 7, 6: 10, 12: 14, 18: 17, 24: 19, 30: 17 }, { 4: 5, 10: 9, 16: 12, 22: 17, 28: 21 }, { 2: 7, 8: 12, 14: 16, 20: 19, 26: 22 }, { 4: 10, 10: 14, 16: 19, 24: 22, 30: 26 }],
+        profile: { kick: 0.17, snare: 0.08, hat: 0.026, bass: 0.03, pad: 0.01, lead: 0.028, leadType: "triangle", leadDuration: 0.16 }
+      },
+      game: {
+        kicks: [[0, 5, 11, 16, 21, 27], [0, 7, 12, 16, 23, 29], [0, 4, 9, 16, 20, 25, 30], [0, 6, 12, 17, 22, 28]],
+        snares: [[8, 24], [8, 24], [8, 20, 24], [8, 24, 31]],
+        hats: [[2, 4, 6, 10, 14, 18, 22, 26, 30], [1, 3, 7, 9, 13, 17, 21, 25, 29], [2, 6, 10, 12, 18, 22, 26, 30], [1, 5, 9, 13, 15, 19, 23, 27, 31]],
+        bass: [{ 0: -7, 5: -2, 11: 3, 16: 5, 24: 10 }, { 0: -5, 7: 0, 12: 5, 16: 7, 24: 12 }, { 0: -7, 4: -2, 9: 3, 16: 7, 20: 10, 28: 12 }, { 0: -3, 6: 2, 12: 5, 17: 9, 24: 12 }],
+        pads: [{ 0: -7, 16: 5 }, { 0: -5, 16: 7 }, { 0: -3, 16: 8 }, { 0: -2, 16: 10 }],
+        lead: [{ 1: 7, 3: 10, 6: 14, 9: 17, 13: 19, 18: 22, 25: 24, 30: 22 }, { 2: 5, 5: 9, 8: 12, 12: 17, 16: 19, 21: 24, 28: 26 }, { 1: 7, 4: 12, 7: 16, 10: 19, 14: 22, 18: 24, 24: 27, 30: 29 }, { 3: 10, 6: 14, 9: 17, 12: 22, 17: 24, 23: 27, 29: 31 }],
+        profile: { kick: 0.21, snare: 0.09, hat: 0.03, bass: 0.032, pad: 0.008, lead: 0.03, leadType: "triangle", leadDuration: 0.09 }
+      }
     },
     drift: {
-      kicks: [[0, 12, 24], [0, 10, 22], [0, 14, 24], [0, 8, 20, 28]],
-      snares: [[12, 28], [12, 28], [14, 28], [8, 24]],
-      hats: [[6, 14, 22, 30], [4, 12, 18, 26], [8, 16, 24, 30], [6, 12, 20, 28]],
-      bass: [{ 0: -5, 12: 0, 24: 3 }, { 0: -2, 10: 3, 22: 7 }, { 0: -5, 14: 2, 24: 5 }, { 0: -2, 8: 3, 20: 8 }],
-      pads: [{ 0: -5, 16: 0 }, { 0: -2, 16: 3 }, { 0: -5, 16: 5 }, { 0: -2, 16: 8 }]
+      menu: {
+        kicks: [[0], [0], [0], [0]],
+        snares: [[], [], [], []],
+        hats: [[12, 28], [8, 24], [14, 30], [10, 26]],
+        bass: [{ 0: -12, 16: -5 }, { 0: -10, 16: -3 }, { 0: -8, 16: 0 }, { 0: -12, 16: 2 }],
+        pads: [{ 0: -7, 16: -2 }, { 0: -5, 16: 0 }, { 0: -3, 16: 2 }, { 0: -7, 16: 5 }],
+        lead: [{ 8: 2, 20: 5 }, { 6: 0, 18: 3, 30: 7 }, { 10: 2, 22: 5 }, { 12: 7, 28: 10 }],
+        profile: { kick: 0.05, snare: 0, hat: 0.014, bass: 0.022, pad: 0.026, lead: 0.018, leadType: "triangle", leadDuration: 0.3 }
+      },
+      game: {
+        kicks: [[0, 12, 24], [0, 10, 22], [0, 14, 24], [0, 8, 20, 28]],
+        snares: [[12, 28], [12, 28], [14, 28], [8, 24]],
+        hats: [[6, 14, 22, 30], [4, 12, 18, 26], [8, 16, 24, 30], [6, 12, 20, 28]],
+        bass: [{ 0: -5, 12: 0, 24: 3 }, { 0: -2, 10: 3, 22: 7 }, { 0: -5, 14: 2, 24: 5 }, { 0: -2, 8: 3, 20: 8 }],
+        pads: [{ 0: -5, 16: 0 }, { 0: -2, 16: 3 }, { 0: -5, 16: 5 }, { 0: -2, 16: 8 }],
+        lead: [{ 6: 10, 18: 14, 30: 17 }, { 4: 8, 16: 12, 28: 15 }, { 8: 10, 20: 14, 30: 19 }, { 6: 12, 18: 15, 28: 20 }],
+        profile: { kick: 0.08, snare: 0.04, hat: 0.016, bass: 0.022, pad: 0.024, lead: 0.02, leadType: "triangle", leadDuration: 0.24 }
+      }
     }
   };
-  return moods[audioPrefs.mood] || moods.breeze;
+
+  const mood = library[audioPrefs.mood] || library.breeze;
+  return mood[scene] || mood.game;
 }
 
 function stopBeatLoop() {
@@ -411,35 +479,50 @@ function stopBeatLoop() {
   }
 }
 
+function refreshMusicLoop() {
+  stopBeatLoop();
+  if (audioPrefs.enabled) {
+    audioState.beatStep = 0;
+    audioState.phrase = Math.floor(Math.random() * 4);
+    startBeatLoop();
+  }
+}
+
 function startBeatLoop() {
   if (!ensureAudio() || audioState.beatTimer) {
     return;
   }
 
   audioState.beatTimer = window.setInterval(() => {
-    if (!audioPrefs.enabled || state.paused || !state.running || audioPrefs.muteMusic) {
+    const inMenu = !titlePanel.classList.contains("hidden") && gamePanel.classList.contains("hidden");
+    if (!audioPrefs.enabled || audioPrefs.muteMusic || state.paused || (!state.running && !inMenu)) {
       return;
     }
 
-    const patterns = getMoodPatterns();
+    const scene = inMenu ? "menu" : "game";
+    const patterns = getMoodPatterns(scene);
+    const profile = patterns.profile;
     const phrase = audioState.phrase % patterns.kicks.length;
     const step = audioState.beatStep % 32;
     const time = audioState.context.currentTime + 0.03;
 
-    if (patterns.kicks[phrase].includes(step)) {
-      playKick(time, audioPrefs.mood === "pulse" ? 0.2 : 0.16);
+    if (patterns.kicks[phrase].includes(step) && profile.kick > 0) {
+      playKick(time, profile.kick);
     }
-    if (patterns.snares[phrase].includes(step)) {
-      playSnare(time, audioPrefs.mood === "drift" ? 0.06 : 0.08);
+    if (patterns.snares[phrase].includes(step) && profile.snare > 0) {
+      playSnare(time, profile.snare);
     }
-    if (patterns.hats[phrase].includes(step)) {
-      playHat(time, step % 8 === 6, audioPrefs.mood === "pulse" ? 0.03 : 0.022);
+    if (patterns.hats[phrase].includes(step) && profile.hat > 0) {
+      playHat(time, step % 8 === 6 || scene === "menu", profile.hat);
     }
-    if (step in patterns.bass[phrase]) {
-      playBass(time, patterns.bass[phrase][step], audioPrefs.mood === "drift" ? 0.02 : 0.028);
+    if (step in patterns.bass[phrase] && profile.bass > 0) {
+      playBass(time, patterns.bass[phrase][step], profile.bass);
     }
-    if (step in patterns.pads[phrase]) {
-      playPad(time, patterns.pads[phrase][step], 0.52, audioPrefs.mood === "drift" ? 0.022 : 0.016);
+    if (step in patterns.pads[phrase] && profile.pad > 0) {
+      playPad(time, patterns.pads[phrase][step], scene === "menu" ? 0.72 : 0.52, profile.pad);
+    }
+    if (step in patterns.lead[phrase] && profile.lead > 0) {
+      playLead(time, patterns.lead[phrase][step], profile.leadType, profile.leadDuration, profile.lead);
     }
 
     audioState.beatStep += 1;
@@ -463,6 +546,12 @@ function syncSettingsFromControls() {
   state.mapName = mapSelect.value;
   state.fruitStyle = fruitSelect.value;
   state.solidWalls = getModeRules().wrap ? false : wallsToggle.checked;
+}
+
+function updateModeDescription() {
+  if (modeDescription) {
+    modeDescription.textContent = (modeConfig[modeSelect.value] || modeConfig.classic).description;
+  }
 }
 
 function updateHud() {
@@ -585,6 +674,7 @@ function returnToMenu() {
   hideOverlay();
   setRandomSnakeFact();
   renderScoreHistory();
+  refreshMusicLoop();
 }
 
 function pauseGame() {
@@ -802,14 +892,17 @@ function drawSnake(tileSize, progress) {
   ctx.shadowColor = root.getPropertyValue("--snake-head");
   ctx.shadowBlur = tileSize * 0.36;
   ctx.beginPath();
+  let previousPoint = null;
   snakePoints.forEach((segment, index) => {
     const px = segment.x * tileSize + tileSize / 2;
     const py = segment.y * tileSize + tileSize / 2;
-    if (index === 0) {
+    const jumped = previousPoint && (Math.abs(px - previousPoint.x) > tileSize * 1.4 || Math.abs(py - previousPoint.y) > tileSize * 1.4);
+    if (index === 0 || jumped) {
       ctx.moveTo(px, py);
     } else {
       ctx.lineTo(px, py);
     }
+    previousPoint = { x: px, y: py };
   });
   ctx.stroke();
 
@@ -1055,7 +1148,7 @@ function toggleAudio() {
     return;
   }
   ensureAudio();
-  startBeatLoop();
+  refreshMusicLoop();
   playUiBlip(880, 0.08, "triangle", 0.08);
 }
 
@@ -1067,8 +1160,12 @@ function updateAudioPrefFromControl(control, key, scale = 100) {
 
 function syncModeUi() {
   wallsToggle.disabled = state.modeName === "zen";
+  updateModeDescription();
   renderScoreHistory();
   updateHud();
+  if (!titlePanel.classList.contains("hidden")) {
+    refreshMusicLoop();
+  }
 }
 
 function requestFullscreen() {
@@ -1158,7 +1255,12 @@ canvas.addEventListener("touchstart", handleSwipeStart, { passive: true });
 canvas.addEventListener("touchend", handleSwipeEnd, { passive: true });
 
 [startButton, restartButton, menuButton, audioButton, fullscreenButton, factButton, clearHistoryButton].filter(Boolean).forEach((button) => {
-  button.addEventListener("pointerdown", () => playUiBlip(760, 0.05, "triangle", 0.07));
+  button.addEventListener("pointerdown", () => {
+    playUiBlip(760, 0.05, "triangle", 0.07);
+    if (!state.running) {
+      refreshMusicLoop();
+    }
+  });
 });
 
 [modeSelect, speedSelect, gridSelect, mapSelect, fruitSelect, colorSelect, wallsToggle, musicMoodSelect].forEach((control, index) => {
@@ -1172,9 +1274,8 @@ canvas.addEventListener("touchend", handleSwipeEnd, { passive: true });
     }
     if (control === musicMoodSelect) {
       audioPrefs.mood = musicMoodSelect.value;
-      audioState.beatStep = 0;
-      audioState.phrase = 0;
       saveAudioPrefs();
+      refreshMusicLoop();
     }
     playUiBlip(620 + index * 40, 0.05, "triangle", 0.05);
   });
@@ -1207,3 +1308,16 @@ state.modeName = modeSelect.value;
 syncModeUi();
 setRandomSnakeFact();
 drawBoard();
+
+
+
+
+
+
+
+
+
+
+
+
+
