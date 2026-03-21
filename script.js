@@ -34,6 +34,7 @@ const state = {
   snake: [],
   direction: { x: 1, y: 0 },
   pendingDirection: { x: 1, y: 0 },
+  inputQueue: [],
   previousSnake: [],
   food: { x: 0, y: 0 },
   obstacles: [],
@@ -311,6 +312,7 @@ function resetGameState() {
   state.previousSnake = state.snake.map((segment) => ({ ...segment }));
   state.direction = { x: 1, y: 0 };
   state.pendingDirection = { x: 1, y: 0 };
+  state.inputQueue = [];
   state.obstacles = buildMap(state.mapName, state.tileCount);
   state.particles = [];
   placeFood();
@@ -333,6 +335,7 @@ function startGame(startDirection = null) {
   }
   titlePanel.classList.add("hidden");
   gamePanel.classList.remove("hidden");
+  state.lastTick = performance.now();
   state.animationId = requestAnimationFrame(gameLoop);
 }
 
@@ -390,14 +393,29 @@ function setDirection(nextX, nextY) {
   if (!state.running || state.paused) {
     return;
   }
-  if (state.direction.x === -nextX && state.direction.y === -nextY) {
+
+  const proposedDirection =
+    state.inputQueue[state.inputQueue.length - 1] || state.pendingDirection || state.direction;
+
+  if (proposedDirection.x === nextX && proposedDirection.y === nextY) {
     return;
   }
-  state.pendingDirection = { x: nextX, y: nextY };
+
+  if (proposedDirection.x === -nextX && proposedDirection.y === -nextY) {
+    return;
+  }
+
+  state.inputQueue.push({ x: nextX, y: nextY });
+  if (state.inputQueue.length > 2) {
+    state.inputQueue.shift();
+  }
 }
 
 function stepGame() {
   state.previousSnake = state.snake.map((segment) => ({ ...segment }));
+  if (state.inputQueue.length > 0) {
+    state.pendingDirection = state.inputQueue.shift();
+  }
   state.direction = state.pendingDirection;
   const head = state.snake[0];
   let nextHead = {
@@ -829,6 +847,7 @@ function returnToMenu() {
   cancelAnimationFrame(state.animationId);
   state.running = false;
   state.paused = false;
+  state.inputQueue = [];
   canvas.classList.remove("flash");
   titlePanel.classList.remove("hidden");
   gamePanel.classList.add("hidden");
@@ -921,3 +940,5 @@ audioButton.addEventListener("click", toggleAudio);
 
 updateAudioButton();
 drawBoard();
+
+
