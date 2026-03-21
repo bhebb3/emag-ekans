@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emag Ekans</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <div class="scene-glow scene-glow-left"></div>
+    <div class="scene-glow scene-glow-right"></div>
+
+    <section class="title-panel" id="titlePanel">
+      <p class="eyebrow">Snake System</p>
+      <h1>Emag Ekans</h1>
+
+      <div class="menu-card">
+        <button class="primary-button" id="startButton" type="button">Start Game</button>
+
+        <details class="options-menu" open>
+          <summary>Options Menu</summary>
+
+          <label class="option-row" for="speedSelect">
+            <span>Speed</span>
+            <select id="speedSelect">
+              <option value="220" selected>Slow</option>
+              <option value="170">Classic</option>
+              <option value="130">Fast</option>
+            </select>
+          </label>
+
+          <label class="option-row" for="gridSelect">
+            <span>Board Size</span>
+            <select id="gridSelect">
+              <option value="12" selected>Small Map</option>
+              <option value="16">Classic</option>
+              <option value="20">Wide Map</option>
+            </select>
+          </label>
+
+          <label class="option-row" for="mapSelect">
+            <span>Map</span>
+            <select id="mapSelect">
+              <option value="classic" selected>Classic Field</option>
+              <option value="gates">Twin Gates</option>
+            </select>
+          </label>
+
+          <label class="option-row" for="fruitSelect">
+            <span>Fruit Style</span>
+            <select id="fruitSelect">
+              <option value="apple" selected>Apple</option>
+              <option value="berry">Berry</option>
+              <option value="star">Star Fruit</option>
+            </select>
+          </label>
+
+          <label class="option-row toggle-row" for="wallsToggle">
+            <span>Solid Walls</span>
+            <input id="wallsToggle" type="checkbox" checked>
+          </label>
+        </details>
+
+        <p class="controls-note">Arrow keys or WASD move the snake, start a run, and restart your rhythm. Space pauses.</p>
+      </div>
+    </section>
+
+    <section class="game-panel hidden" id="gamePanel">
+      <header class="hud">
+        <div class="hud-block">
+          <span class="hud-label">Score</span>
+          <strong id="scoreValue">0</strong>
+          <div class="hud-meter"><span id="scoreBar"></span></div>
+        </div>
+        <div class="hud-block">
+          <span class="hud-label">Best</span>
+          <strong id="bestValue">0</strong>
+          <div class="hud-meter"><span id="bestBar"></span></div>
+        </div>
+        <div class="hud-block">
+          <span class="hud-label">State</span>
+          <strong id="statusValue">Running</strong>
+          <div class="hud-meter"><span id="stateBar"></span></div>
+        </div>
+        <button class="hud-toggle" id="audioButton" type="button" aria-pressed="true">Audio On</button>
+      </header>
+
+      <div class="board-wrap">
+        <div class="noise-overlay" aria-hidden="true"></div>
+        <canvas id="gameCanvas" width="600" height="600" aria-label="Snake game board"></canvas>
+        <div class="overlay hidden" id="overlay">
+          <h2 id="overlayTitle">Game Over</h2>
+          <p id="overlayMessage">Press restart to play again.</p>
+          <div class="overlay-actions">
+            <button class="primary-button" id="restartButton" type="button">Restart</button>
+            <button class="secondary-button" id="menuButton" type="button">Main Menu</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
