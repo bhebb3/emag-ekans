@@ -26,6 +26,7 @@ const snakeFact = document.getElementById("snakeFact");
 const factButton = document.getElementById("factButton");
 const historyList = document.getElementById("historyList");
 const clearHistoryButton = document.getElementById("clearHistoryButton");
+const achievementList = document.getElementById("achievementList");
 const touchUp = document.getElementById("touchUp");
 const touchLeft = document.getElementById("touchLeft");
 const touchRight = document.getElementById("touchRight");
@@ -42,7 +43,8 @@ const ctx = canvas.getContext("2d");
 const STORAGE_KEYS = {
   bests: "emag-ekans-mode-bests",
   history: "emag-ekans-mode-history",
-  audio: "emag-ekans-audio-prefs"
+  audio: "emag-ekans-audio-prefs",
+  achievements: "emag-ekans-achievements"
 };
 
 const snakeFacts = [
@@ -116,6 +118,15 @@ const defaultAudioPrefs = {
   muteSfx: false
 };
 
+const achievementConfig = {
+  wallDancer: { icon: "WD", name: "Wall Dancer", description: "Wrap around the board 8 times in one no-wall run." },
+  zenMaster: { icon: "ZM", name: "Zen Master", description: "Score 60 points in Zen mode." },
+  speedDemon: { icon: "SD", name: "Speed Demon", description: "Score 90 points in Sprint mode." },
+  gateSurfer: { icon: "GS", name: "Gate Surfer", description: "Score 40 points on the Twin Gates map." },
+  fruitFrenzy: { icon: "FF", name: "Fruit Frenzy", description: "Eat 12 fruit in a single run." }
+};
+
+
 const state = {
   tileCount: Number(gridSelect.value),
   moveDelay: Number(speedSelect.value),
@@ -137,7 +148,9 @@ const state = {
   paused: false,
   animationId: 0,
   lastTick: 0,
-  swipeStart: null
+  swipeStart: null,
+  stats: null,
+  usingFocusMode: false
 };
 
 let bestScores = loadJson(STORAGE_KEYS.bests, { classic: 0, sprint: 0, zen: 0 });
@@ -145,6 +158,7 @@ let scoreHistory = loadJson(STORAGE_KEYS.history, []);
 let audioPrefs = { ...defaultAudioPrefs, ...loadJson(STORAGE_KEYS.audio, {}) };
 let currentFactIndex = -1;
 let scorePulseTimeout = 0;
+let achievements = loadJson(STORAGE_KEYS.achievements, {});
 
 const audioState = {
   context: null,
@@ -176,6 +190,56 @@ function saveBestScores() {
 
 function saveScoreHistory() {
   localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(scoreHistory));
+}
+
+function saveAchievements() {
+  localStorage.setItem(STORAGE_KEYS.achievements, JSON.stringify(achievements));
+}
+
+function unlockAchievement(key) {
+  if (achievements[key]) {
+    return;
+  }
+  achievements[key] = true;
+  saveAchievements();
+  renderAchievements();
+  playUiBlip(980, 0.11, "triangle", 0.08);
+}
+
+function renderAchievements() {
+  if (!achievementList) {
+    return;
+  }
+
+  achievementList.innerHTML = Object.entries(achievementConfig)
+    .map(([key, item]) => {
+      const unlocked = Boolean(achievements[key]);
+      return `<li class="achievement-item ${unlocked ? "" : "locked"}"><span class="achievement-badge">${item.icon}</span><span class="achievement-copy"><strong>${item.name}</strong><span>${unlocked ? "Unlocked" : item.description}</span></span></li>`;
+    })
+    .join("");
+}
+
+function evaluateAchievements() {
+  const stats = state.stats;
+  if (!stats) {
+    return;
+  }
+
+  if (!stats.solidWalls && stats.wraps >= 8) {
+    unlockAchievement("wallDancer");
+  }
+  if (stats.mode === "zen" && state.score >= 60) {
+    unlockAchievement("zenMaster");
+  }
+  if (stats.mode === "sprint" && state.score >= 90) {
+    unlockAchievement("speedDemon");
+  }
+  if (stats.map === "gates" && state.score >= 40) {
+    unlockAchievement("gateSurfer");
+  }
+  if (stats.fruits >= 12) {
+    unlockAchievement("fruitFrenzy");
+  }
 }
 
 function getModeRules() {
@@ -585,8 +649,17 @@ function shakeBoard() {
 }
 
 function resizeCanvas() {
+  const viewportWidth = window.innerWidth || 600;
+  const viewportHeight = window.innerHeight || 800;
+  const hudHeight = gamePanel.classList.contains("hidden") ? 0 : 170;
+  const controlsHeight = window.matchMedia("(hover: none) and (pointer: coarse)").matches ? 130 : 28;
+  const horizontalPadding = viewportWidth <= 720 ? 18 : 36;
+  const verticalBudget = Math.max(240, viewportHeight - hudHeight - controlsHeight);
+  const size = Math.max(280, Math.min(760, viewportWidth - horizontalPadding, verticalBudget));
   canvas.width = 600;
   canvas.height = 600;
+  canvas.style.width = `${size}px`;
+  canvas.style.height = `${size}px`;
 }
 
 function buildMap(mapName, tileCount) {
@@ -615,6 +688,7 @@ function resetGameState(startDirection = { x: 1, y: 0 }) {
   state.particles = [];
   state.inputQueue = [];
   state.obstacles = state.modeName === "zen" ? [] : buildMap(state.mapName, state.tileCount);
+  state.stats = { fruits: 0, wraps: 0, mode: state.modeName, map: state.mapName, solidWalls: state.solidWalls };
 
   const center = Math.floor(state.tileCount / 2);
   const safeDirection = startDirection.x === 0 && startDirection.y === 0 ? { x: 1, y: 0 } : startDirection;
@@ -695,6 +769,7 @@ function pauseGame() {
 function endGame(message) {
   state.running = false;
   rememberRun(state.score);
+  evaluateAchievements();
   cancelAnimationFrame(state.animationId);
   spawnImpactParticles(state.snake[0]?.x ?? state.food.x, state.snake[0]?.y ?? state.food.y, "crash");
   shakeBoard();
@@ -787,6 +862,9 @@ function stepGame() {
 
   const wrap = rules.wrap || !state.solidWalls;
   if (wrap) {
+    if (state.stats && (nextHead.x < 0 || nextHead.y < 0 || nextHead.x >= state.tileCount || nextHead.y >= state.tileCount)) {
+      state.stats.wraps += 1;
+    }
     nextHead = {
       x: (nextHead.x + state.tileCount) % state.tileCount,
       y: (nextHead.y + state.tileCount) % state.tileCount
@@ -806,6 +884,9 @@ function stepGame() {
 
   if (ateFood) {
     state.score += rules.points;
+    if (state.stats) {
+      state.stats.fruits += 1;
+    }
     setModeBest(state.score);
     placeFood();
     playEatSound();
@@ -815,6 +896,7 @@ function stepGame() {
     canvas.classList.remove("flash");
     void canvas.offsetWidth;
     canvas.classList.add("flash");
+    evaluateAchievements();
     if (state.modeName === "sprint") {
       state.moveDelay = Math.max(88, state.moveDelay - 4);
     }
@@ -1168,13 +1250,31 @@ function syncModeUi() {
   }
 }
 
+function toggleFocusMode(force) {
+  state.usingFocusMode = force ?? !state.usingFocusMode;
+  document.body.classList.toggle("focus-mode", state.usingFocusMode);
+  fullscreenButton.textContent = state.usingFocusMode || document.fullscreenElement ? "Exit Fullscreen" : "Fullscreen";
+  resizeCanvas();
+}
+
 function requestFullscreen() {
   const target = document.documentElement;
-  if (!document.fullscreenElement && target.requestFullscreen) {
-    target.requestFullscreen().catch(() => {});
-  } else if (document.exitFullscreen) {
-    document.exitFullscreen().catch(() => {});
+  if (document.fullscreenElement) {
+    document.exitFullscreen?.().catch(() => toggleFocusMode(false));
+    toggleFocusMode(false);
+    return;
   }
+
+  if (target.requestFullscreen) {
+    target.requestFullscreen().then(() => {
+      toggleFocusMode(true);
+    }).catch(() => {
+      toggleFocusMode();
+    });
+    return;
+  }
+
+  toggleFocusMode();
 }
 
 function handleSwipeStart(event) {
@@ -1251,8 +1351,16 @@ clearHistoryButton?.addEventListener("click", () => {
   button?.addEventListener("click", () => handleTouchDirection(x, y));
 });
 touchPause?.addEventListener("click", pauseGame);
-canvas.addEventListener("touchstart", handleSwipeStart, { passive: true });
-canvas.addEventListener("touchend", handleSwipeEnd, { passive: true });
+const preventTouchScroll = (event) => {
+  if (!gamePanel.classList.contains("hidden")) {
+    event.preventDefault();
+  }
+};
+
+canvas.addEventListener("touchstart", handleSwipeStart, { passive: false });
+canvas.addEventListener("touchmove", preventTouchScroll, { passive: false });
+canvas.addEventListener("touchend", handleSwipeEnd, { passive: false });
+boardWrap?.addEventListener("touchmove", preventTouchScroll, { passive: false });
 
 [startButton, restartButton, menuButton, audioButton, fullscreenButton, factButton, clearHistoryButton].filter(Boolean).forEach((button) => {
   button.addEventListener("pointerdown", () => {
@@ -1296,11 +1404,18 @@ sfxMuteToggle.addEventListener("change", () => {
 });
 
 document.addEventListener("fullscreenchange", () => {
-  fullscreenButton.textContent = document.fullscreenElement ? "Exit Fullscreen" : "Fullscreen";
+  if (!document.fullscreenElement) {
+    state.usingFocusMode = false;
+    document.body.classList.remove("focus-mode");
+  }
+  fullscreenButton.textContent = document.fullscreenElement || state.usingFocusMode ? "Exit Fullscreen" : "Fullscreen";
+  resizeCanvas();
 });
 window.addEventListener("resize", resizeCanvas);
+window.addEventListener("orientationchange", resizeCanvas);
 
 syncAudioControls();
+renderAchievements();
 applyColorTheme();
 updateAudioButton();
 resizeCanvas();
@@ -1308,6 +1423,19 @@ state.modeName = modeSelect.value;
 syncModeUi();
 setRandomSnakeFact();
 drawBoard();
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
